@@ -64,6 +64,7 @@
  **************************************************************************************/
 
 using namespace uavcan::node;
+using namespace uavcan::_register;
 using namespace uavcan::primitive::scalar;
 
 /**************************************************************************************
@@ -126,6 +127,16 @@ static const uavcan_node_GetInfo_Response_1_0 GET_INFO_DATA = {
         strlen("107-systems.l3xz-fw_aux-controller")},
 };
 
+static const uavcan_register_List_Response_1_0 register_list1 = {
+    {  "uavcan.node.id", strlen("uavcan.node.id")  },
+};
+static const uavcan_register_List_Response_1_0 register_list2 = {
+    {  "uavcan.node.description", strlen("uavcan.node.description")  },
+};
+static const uavcan_register_List_Response_1_0 register_list3 = {
+    {  "uavcan.pub.inputvoltage.id", strlen("uavcan.pub.inputvoltage.id")  },
+};
+
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
@@ -137,6 +148,7 @@ void onOutput1_Received (CanardRxTransfer const &, Node &);
 void onServo0_Received (CanardRxTransfer const &, Node &);
 void onServo1_Received (CanardRxTransfer const &, Node &);
 void onLightMode_Received(CanardRxTransfer const &, Node &);
+void onList_1_0_Request_Received(CanardRxTransfer const &, Node &);
 void onGetInfo_1_0_Request_Received(CanardRxTransfer const &, Node &);
 
 /**************************************************************************************
@@ -263,6 +275,7 @@ void setup()
   hb.data.vendor_specific_status_code = 0;
 
   /* Subscribe to the GetInfo request */
+  node_hdl.subscribe<List_1_0::Request<>>(onList_1_0_Request_Received);
   node_hdl.subscribe<GetInfo_1_0::Request<>>(onGetInfo_1_0_Request_Received);
   /* Subscribe to the reception of Bit message. */
   node_hdl.subscribe<Bit_1_0<ID_LED1>>(onLed1_Received);
@@ -556,4 +569,17 @@ void onGetInfo_1_0_Request_Received(CanardRxTransfer const &transfer, Node & nod
   rsp.data = GET_INFO_DATA;
   Serial.println("onGetInfo_1_0_Request_Received");
   node_hdl.respond(rsp, transfer.metadata.remote_node_id, transfer.metadata.transfer_id);
+}
+void onList_1_0_Request_Received(CanardRxTransfer const &transfer, Node & node_hdl)
+{
+  static int count=0;
+//  List_1_0::Response<> rsp = List_1_0::Response<>(REGISTER_LIST);
+  List_1_0::Response<> rsp = List_1_0::Response<>();
+  if(count==0) rsp.data = register_list1;
+  else if(count==1) rsp.data = register_list2;
+  else if(count==2) rsp.data = register_list3;
+//  else rsp.data=NULL;
+  Serial.println("onList_1_0_Request_Received");
+  node_hdl.respond(rsp, transfer.metadata.remote_node_id, transfer.metadata.transfer_id);
+  count++;
 }
